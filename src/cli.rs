@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Args, Parser, ValueEnum};
 
 /// Plugin for age to interact with Hybrid Public Key Encryption (HPKE)
 ///
@@ -13,10 +13,46 @@ use clap::Parser;
 pub struct Cli {
     #[clap(flatten)]
     pub verbose: clap_verbosity_flag::Verbosity,
-    #[arg(long, hide = true)]
+    #[arg(long, hide = true, group = "action")]
     pub age_plugin: Option<String>,
-    #[arg(long, default_value_t = false)]
+    #[command(flatten)]
+    pub generate: Option<GenerateArg>,
+}
+
+#[derive(Args)]
+pub struct GenerateArg {
+    #[arg(long, default_value_t = false, group = "action")]
     pub generate: bool,
+    #[arg(long, requires = "action")]
+    pub associated_data: Option<String>,
+    #[arg(long, requires = "action")]
+    pub kem: Option<Kem>,
+    #[arg(long, requires = "action")]
+    pub kdf: Option<Kdf>,
+    #[arg(long, requires = "action")]
+    pub aead: Option<Aead>,
+}
+
+#[derive(Clone, ValueEnum)]
+pub enum Kem {
+    X25519HkdfSha256,
+    X25519Kyber768,
+    P256HkdfSha256,
+    P521HkdfSha512,
+}
+
+#[derive(Clone, ValueEnum)]
+pub enum Kdf {
+    Sha256,
+    Sha384,
+    Sha512,
+}
+
+#[derive(Clone, ValueEnum)]
+pub enum Aead {
+    AesGcm128,
+    AesGcm256,
+    ChaCha20Poly1305,
 }
 
 #[allow(dead_code)]
