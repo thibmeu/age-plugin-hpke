@@ -1,3 +1,4 @@
+use age_plugin_hpke::agile::{AeadAlg, KemAlg};
 use clap::{Args, Parser, ValueEnum};
 
 /// Plugin for age to interact with Hybrid Public Key Encryption (HPKE)
@@ -28,24 +29,26 @@ pub struct GenerateArg {
     #[arg(long, requires = "action")]
     pub kem: Option<Kem>,
     #[arg(long, requires = "action")]
-    pub kdf: Option<Kdf>,
-    #[arg(long, requires = "action")]
     pub aead: Option<Aead>,
 }
 
 #[derive(Clone, ValueEnum)]
 pub enum Kem {
     X25519HkdfSha256,
-    X25519Kyber768,
+    X25519Kyber768Draft00,
     P256HkdfSha256,
     P521HkdfSha512,
 }
 
-#[derive(Clone, ValueEnum)]
-pub enum Kdf {
-    Sha256,
-    Sha384,
-    Sha512,
+impl Kem {
+    pub fn to_alg(&self) -> KemAlg {
+        match self {
+            Self::X25519HkdfSha256 => KemAlg::X25519HkdfSha256,
+            Self::X25519Kyber768Draft00 => KemAlg::X25519Kyber768Draft00,
+            Self::P256HkdfSha256 => KemAlg::DhP256HkdfSha256,
+            Self::P521HkdfSha512 => KemAlg::DhP521HkdfSha512,
+        }
+    }
 }
 
 #[derive(Clone, ValueEnum)]
@@ -53,6 +56,16 @@ pub enum Aead {
     AesGcm128,
     AesGcm256,
     ChaCha20Poly1305,
+}
+
+impl Aead {
+    pub fn to_alg(&self) -> AeadAlg {
+        match self {
+            Self::AesGcm128 => AeadAlg::AesGcm128,
+            Self::AesGcm256 => AeadAlg::AesGcm256,
+            Self::ChaCha20Poly1305 => AeadAlg::ChaCha20Poly1305,
+        }
+    }
 }
 
 #[allow(dead_code)]

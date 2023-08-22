@@ -23,13 +23,13 @@ HPKE is defined in [RFC 9180](https://www.rfc-editor.org/rfc/rfc9180.html), and 
 ## Features
 
 * HPKE recipienties and identities
+* Post Quantum HPKE with Kyber Draft00
 * Plugin cli for age
 * Plugin library for age
 * Cross platform (Linux, Windows, macOS)
 
 ## What's next
 
-* Post Quantum HPKE with Kyber
 * Agree on age format
 
 ## Installation

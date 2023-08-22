@@ -3,61 +3,43 @@ use std::collections::HashMap;
 use age_core::{format::Stanza, secrecy::ExposeSecret};
 use age_plugin::{identity, recipient};
 use bincode::{config, Decode, Encode};
-use hpke::{
-    aead::{AeadTag, ChaCha20Poly1305},
-    kdf::HkdfSha384,
-    kem::X25519HkdfSha256,
-    Deserializable, OpModeR, OpModeS, Serializable,
-};
 use rand::{rngs::StdRng, SeedableRng};
 
-type Kem = X25519HkdfSha256;
-type Aead = ChaCha20Poly1305;
-type Kdf = HkdfSha384;
+use crate::agile::{
+    agile_setup_receiver, agile_setup_sender, AeadAlg, AgileAeadTag, AgileEncappedKey,
+    AgileKeypair, AgileOpModeR, AgileOpModeRTy, AgileOpModeS, AgileOpModeSTy, AgilePrivateKey,
+    AgilePublicKey, KdfAlg, KemAlg,
+};
 
 pub const STANZA_TAG: &str = "hpke";
 pub const INFO_STR: &[u8] = b"age-plugin-hpke";
 pub const PLUGIN_NAME: &str = "hpke";
 
-pub struct Identity {
-    private_key: <Kem as hpke::Kem>::PrivateKey,
-}
-
 #[derive(Debug, Encode, Decode, PartialEq, Clone)]
-struct EncodedIdentity {
-    private_key: Vec<u8>,
-}
-
-impl From<Identity> for EncodedIdentity {
-    fn from(value: Identity) -> Self {
-        Self {
-            private_key: value.private_key.to_bytes().to_vec(),
-        }
-    }
-}
-
-impl From<EncodedIdentity> for Identity {
-    fn from(val: EncodedIdentity) -> Self {
-        Identity::new(&<Kem as hpke::Kem>::PrivateKey::from_bytes(&val.private_key).unwrap())
-    }
+pub struct Identity {
+    kem: KemAlg,
+    aead: AeadAlg,
+    kdf: KdfAlg,
+    private_key: AgilePrivateKey,
 }
 
 impl Identity {
-    pub fn new(private_key: &<Kem as hpke::Kem>::PrivateKey) -> Self {
+    pub fn new(kem: KemAlg, aead: AeadAlg, kdf: KdfAlg, private_key: &AgilePrivateKey) -> Self {
         Self {
+            kem,
+            aead,
+            kdf,
             private_key: private_key.clone(),
         }
     }
 
     pub fn from_bytes(data: &[u8]) -> Self {
-        let (encoded_identity, _): (EncodedIdentity, usize) =
-            bincode::decode_from_slice(data, config::standard()).unwrap();
-        encoded_identity.into()
+        let (identity, _) = bincode::decode_from_slice(data, config::standard()).unwrap();
+        identity
     }
 
     pub fn to_bytes(self) -> Vec<u8> {
-        let encoded_identity: EncodedIdentity = self.into();
-        bincode::encode_to_vec(encoded_identity, config::standard()).unwrap()
+        bincode::encode_to_vec(self, config::standard()).unwrap()
     }
 }
 
@@ -80,17 +62,19 @@ impl age::Identity for Identity {
         ];
         let [associated_data, encapped_key_bytes, tag_bytes] = args;
 
-        let tag = AeadTag::<Aead>::from_bytes(&tag_bytes).expect("could not deserialize AEAD tag!");
-        let encapped_key = <Kem as hpke::Kem>::EncappedKey::from_bytes(&encapped_key_bytes)
-            .expect("could not deserialize the encapsulated pubkey!");
+        let tag: AgileAeadTag = tag_bytes;
+        let encapped_key = AgileEncappedKey::new(self.kem.clone(), &encapped_key_bytes);
 
-        let mut receiver_ctx = hpke::setup_receiver::<Aead, Kdf, Kem>(
-            &OpModeR::Base,
-            &self.private_key,
+        let mut receiver_ctx = agile_setup_receiver(
+            self.aead.clone(),
+            self.kdf.clone(),
+            self.kem.clone(),
+            &AgileOpModeR::new(self.kem.clone(), AgileOpModeRTy::Base),
+            &AgileKeypair::new(self.private_key.clone(), self.private_key.to_pk()),
             &encapped_key,
             INFO_STR,
         )
-        .expect("failed to set up receiver!");
+        .expect("invalid credentials!");
 
         let mut dst = stanza.body.clone();
         receiver_ctx
@@ -102,52 +86,39 @@ impl age::Identity for Identity {
     }
 }
 
-pub struct Recipient {
-    public_key: <Kem as hpke::Kem>::PublicKey,
-    associated_data: Vec<u8>,
-}
-
 #[derive(Debug, Encode, Decode, PartialEq, Clone)]
-struct EncodedRecipient {
-    public_key: Vec<u8>,
+pub struct Recipient {
+    kem: KemAlg,
+    aead: AeadAlg,
+    kdf: KdfAlg,
+    public_key: AgilePublicKey,
     associated_data: Vec<u8>,
-}
-
-impl From<Recipient> for EncodedRecipient {
-    fn from(value: Recipient) -> Self {
-        Self {
-            public_key: value.public_key.to_bytes().to_vec(),
-            associated_data: value.associated_data,
-        }
-    }
-}
-
-impl From<EncodedRecipient> for Recipient {
-    fn from(val: EncodedRecipient) -> Self {
-        Recipient::new(
-            &<Kem as hpke::Kem>::PublicKey::from_bytes(&val.public_key).unwrap(),
-            &val.associated_data,
-        )
-    }
 }
 
 impl Recipient {
-    pub fn new(public_key: &<Kem as hpke::Kem>::PublicKey, associated_data: &[u8]) -> Self {
+    pub fn new(
+        kem: KemAlg,
+        aead: AeadAlg,
+        kdf: KdfAlg,
+        public_key: &AgilePublicKey,
+        associated_data: &[u8],
+    ) -> Self {
         Self {
+            kem,
+            aead,
+            kdf,
             public_key: public_key.clone(),
             associated_data: associated_data.to_vec(),
         }
     }
 
     pub fn from_bytes(data: &[u8]) -> Self {
-        let (encoded_recipient, _): (EncodedRecipient, usize) =
-            bincode::decode_from_slice(data, config::standard()).unwrap();
-        encoded_recipient.into()
+        let (recipient, _) = bincode::decode_from_slice(data, config::standard()).unwrap();
+        recipient
     }
 
     pub fn to_bytes(self) -> Vec<u8> {
-        let encoded_recipient: EncodedRecipient = self.into();
-        bincode::encode_to_vec(encoded_recipient, config::standard()).unwrap()
+        bincode::encode_to_vec(self, config::standard()).unwrap()
     }
 }
 
@@ -159,13 +130,16 @@ impl age::Recipient for Recipient {
         let src = file_key.expose_secret().as_slice();
 
         let mut csprng = StdRng::from_entropy();
-        let (encapped_key, mut sender_ctx) = hpke::setup_sender::<Aead, Kdf, Kem, _>(
-            &OpModeS::Base,
+        let (encapped_key, mut sender_ctx) = agile_setup_sender(
+            self.aead.clone(),
+            self.kdf.clone(),
+            self.kem.clone(),
+            &AgileOpModeS::new(self.kem.clone(), AgileOpModeSTy::Base),
             &self.public_key,
             INFO_STR,
             &mut csprng,
         )
-        .expect("invalid server pubkey!");
+        .expect("invalid setup");
 
         let mut ciphertext = src.to_vec();
         let tag = sender_ctx
@@ -177,7 +151,7 @@ impl age::Recipient for Recipient {
             args: vec![
                 hex::encode(&self.associated_data),
                 hex::encode(encapped_key.to_bytes()),
-                hex::encode(tag.to_bytes()),
+                hex::encode(tag),
             ],
             body: ciphertext,
         }])

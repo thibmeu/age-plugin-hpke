@@ -1,12 +1,12 @@
 use age_plugin_hpke::{new_identity, print_new_identity};
-use cli::{Aead, Kdf, Kem};
+use cli::{Aead, Kem};
 
 mod cli;
 
 pub const PLUGIN_NAME: &str = "hpke";
 
-pub fn generate(associated_data: &str, _kem: Kem, _kdf: Kdf, _aead: Aead) {
-    let (identity, recipient) = new_identity(associated_data);
+pub fn generate(associated_data: &str, kem: Kem, aead: Aead) {
+    let (identity, recipient) = new_identity(kem.to_alg(), aead.to_alg(), associated_data);
     print_new_identity(PLUGIN_NAME, identity, recipient)
 }
 
@@ -27,7 +27,6 @@ fn main() {
             generate(
                 &args.associated_data.unwrap(),
                 args.kem.unwrap(),
-                args.kdf.unwrap(),
                 args.aead.unwrap(),
             )
         }
