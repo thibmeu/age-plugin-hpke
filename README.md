@@ -38,9 +38,41 @@ HPKE is defined in [RFC 9180](https://www.rfc-editor.org/rfc/rfc9180.html), and 
 |:-------------------|:--------------------------|
 | Cargo (Rust 1.67+) | `cargo install --git https://github.com/thibmeu/age-plugin-hpke` |
 
+Read [age installation instructions](https://github.com/FiloSottile/age#installation) to install age. 
+
 ## Usage
 
-Not implemented.
+You can use the `--help` option to get more details about the command and its options.
+
+```bash
+age-plugin-hpke [OPTIONS]
+```
+
+### Generate recipient and identity
+
+None of the recipient or identity is secret. The identity secrecy resides in its usefulness only after a certain point in time.
+
+Create an identity for fastnet.
+```
+age-plugin-hpke --generate --kem x25519-kyber768-draft00 --aead cha-cha20-poly1305 --associated-data "user@example.com" > my_id.key
+```
+
+For convenience, you can also create an associated recipient
+```
+cat my_id.key | grep 'recipient' | sed 's/.*\(age1.*\)/\1/' > my_id.key.pub
+```
+
+> The recipient and identity size are going to vary based on the KEM. With Post-quantum, keys are large.
+
+### HPKE Encryption
+
+Encrypt `Hello age-plugin-hpke!` string with your new key.
+
+```
+echo "Hello age-plugin-hpke!" | age -a -R my_id.key.pub > data.age
+age --decrypt -i my_id.key data.age
+Hello age-plugin-hpke!
+```
 
 ## Security Considerations
 
@@ -58,11 +90,11 @@ This software has not been audited. Please use at your sole discretion. With thi
 
 ### Recipient
 
-`age1hpke1<PUBLIC_KEY>`
+`age1hpke1<KEM_ALG><AEAD_ALG><KDF_ALG><PUBLIC_KEY>`
 
 ### Identity
 
-`AGE-PLUGIN-HPKE-<PRIVATE_KEY>`
+`AGE-PLUGIN-HPKE-<KEM_ALG><AEAD_ALG><KDF_ALG><PRIVATE_KEY>`
 
 ### Why age for HPKE
 
