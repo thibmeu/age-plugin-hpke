@@ -19,5 +19,5 @@ bincode = "2.0.0-rc.3"
 clap = "4.3.21"
 clap-verbosity-flag = "2.0.1"
 hex = "0.4.3"
-hpke = { git = "https://github.com/rozbb/rust-hpke.git", branch = "unstable-pq-xyber", features = ["xyber768d00"] }
+hpke = { git = "https://github.com/rozbb/rust-hpke.git", branch = "unstable-pq-xyber", features = ["p384", "xyber768d00"] }
 rand = "0.8.5"

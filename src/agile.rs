@@ -10,7 +10,10 @@ use bincode::{Decode, Encode};
 use hpke::{
     aead::{Aead, AeadCtxR, AeadCtxS, AeadTag, AesGcm128, AesGcm256, ChaCha20Poly1305},
     kdf::{HkdfSha256, HkdfSha384, HkdfSha512, Kdf as KdfTrait},
-    kem::{DhP256HkdfSha256, Kem as KemTrait, X25519HkdfSha256, X25519Kyber768Draft00},
+    kem::{
+        DhP256HkdfSha256, DhP384HkdfSha384, Kem as KemTrait, X25519HkdfSha256,
+        X25519Kyber768Draft00,
+    },
     setup_receiver, setup_sender, Deserializable, HpkeError, OpModeR, OpModeS, PskBundle,
     Serializable,
 };
@@ -117,7 +120,7 @@ impl AeadAlg {
         Ok(res)
     }
 
-    fn to_u16(self) -> u16 {
+    fn to_u16(&self) -> u16 {
         match self {
             AeadAlg::AesGcm128 => 0x01,
             AeadAlg::AesGcm256 => 0x02,
@@ -153,7 +156,7 @@ impl KdfAlg {
         Ok(res)
     }
 
-    fn to_u16(self) -> u16 {
+    fn to_u16(&self) -> u16 {
         match self {
             KdfAlg::HkdfSha256 => 0x01,
             KdfAlg::HkdfSha384 => 0x02,
@@ -176,6 +179,7 @@ pub enum KemAlg {
     X25519Kyber768Draft00,
     X448HkdfSha512,
     DhP256HkdfSha256,
+    DhP384HkdfSha384,
     DhP521HkdfSha512,
 }
 
@@ -183,6 +187,7 @@ impl KemAlg {
     fn name(&self) -> &'static str {
         match self {
             KemAlg::DhP256HkdfSha256 => "DhP256HkdfSha256",
+            KemAlg::DhP384HkdfSha384 => "DhP384HkdfSha384",
             KemAlg::DhP521HkdfSha512 => "DhP521HkdfSha512",
             KemAlg::X25519HkdfSha256 => "X25519HkdfSha256",
             KemAlg::X25519Kyber768Draft00 => "X25519Kyber768Draft00",
@@ -193,7 +198,7 @@ impl KemAlg {
     pub fn try_from_u16(id: u16) -> Result<KemAlg, AgileHpkeError> {
         let res = match id {
             0x10 => KemAlg::DhP256HkdfSha256,
-            // 0x11 => KemAlg::DhP384HkdfSha384,
+            0x11 => KemAlg::DhP384HkdfSha384,
             0x12 => KemAlg::DhP521HkdfSha512,
             0x20 => KemAlg::X25519HkdfSha256,
             0x22 => KemAlg::X25519Kyber768Draft00,
@@ -207,7 +212,7 @@ impl KemAlg {
     pub fn to_u16(self) -> u16 {
         match self {
             KemAlg::DhP256HkdfSha256 => 0x10,
-            // KemAlg::DhP384HkdfSha384 => 0x11,
+            KemAlg::DhP384HkdfSha384 => 0x11,
             KemAlg::DhP521HkdfSha512 => 0x12,
             KemAlg::X25519HkdfSha256 => 0x20,
             KemAlg::X25519Kyber768Draft00 => 0x22,
@@ -221,7 +226,7 @@ impl KemAlg {
             KemAlg::X25519Kyber768Draft00 => KdfAlg::HkdfSha256,
             KemAlg::X448HkdfSha512 => KdfAlg::HkdfSha512,
             KemAlg::DhP256HkdfSha256 => KdfAlg::HkdfSha256,
-            // KemAlg::DhP384HkdfSha384 => KdfAlg::HkdfSha384,
+            KemAlg::DhP384HkdfSha384 => KdfAlg::HkdfSha384,
             KemAlg::DhP521HkdfSha512 => KdfAlg::HkdfSha512,
         }
     }
@@ -230,31 +235,23 @@ impl KemAlg {
 #[derive(Debug, Encode, Decode, PartialEq, Clone)]
 pub struct AgilePublicKey {
     kem_alg: KemAlg,
-    pubkey_bytes: Option<Vec<u8>>,
-    privkey_bytes: Option<Vec<u8>>,
+    pubkey_bytes: Vec<u8>,
 }
 
 impl AgilePublicKey {
     pub fn new(kem_alg: KemAlg, pubkey_bytes: &[u8]) -> Self {
         Self {
             kem_alg,
-            pubkey_bytes: Some(pubkey_bytes.to_vec()),
-            privkey_bytes: None,
+            pubkey_bytes: pubkey_bytes.to_vec(),
         }
     }
 
     fn try_lift<Kem: KemTrait>(&self) -> Result<Kem::PublicKey, AgileHpkeError> {
-        match (self.pubkey_bytes.clone(), self.privkey_bytes.clone()) {
-            (Some(pubkey), None) => Kem::PublicKey::from_bytes(&pubkey).map_err(|e| e.into()),
-            (None, Some(privkey)) => Ok(Kem::sk_to_pk(
-                &Kem::PrivateKey::from_bytes(&privkey).unwrap(),
-            )),
-            _ => Err(AgileHpkeError::InvalidKey),
-        }
+        Kem::PublicKey::from_bytes(&self.pubkey_bytes).map_err(|e| e.into())
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        self.pubkey_bytes.clone().unwrap()
+        self.pubkey_bytes.clone()
     }
 }
 
@@ -281,6 +278,22 @@ impl AgileEncappedKey {
     }
 }
 
+macro_rules! sk_to_pk {
+    ($sk:expr, $kem_ty:ty, $kem_alg:ident) => {{
+        type Kem = $kem_ty;
+        let kem_alg = $kem_alg;
+        let sk = $sk;
+
+        let sk = sk.try_lift::<Kem>().unwrap();
+
+        let pk = Kem::sk_to_pk(&sk);
+        AgilePublicKey {
+            kem_alg: kem_alg.clone(),
+            pubkey_bytes: pk.to_bytes().to_vec(),
+        }
+    }};
+}
+
 #[derive(Debug, Encode, Decode, PartialEq, Clone)]
 pub struct AgilePrivateKey {
     kem_alg: KemAlg,
@@ -297,10 +310,14 @@ impl AgilePrivateKey {
     }
 
     pub fn to_pk(&self) -> AgilePublicKey {
-        AgilePublicKey {
-            kem_alg: self.kem_alg.clone(),
-            pubkey_bytes: None,
-            privkey_bytes: Some(self.privkey_bytes.clone()),
+        let kem_alg = self.kem_alg.clone();
+        match self.kem_alg {
+            KemAlg::X25519HkdfSha256 => sk_to_pk!(&self, X25519HkdfSha256, kem_alg),
+            KemAlg::X25519Kyber768Draft00 => sk_to_pk!(&self, X25519Kyber768Draft00, kem_alg),
+            KemAlg::X448HkdfSha512 => unimplemented!(),
+            KemAlg::DhP256HkdfSha256 => sk_to_pk!(&self, DhP256HkdfSha256, kem_alg),
+            KemAlg::DhP384HkdfSha384 => sk_to_pk!(&self, DhP384HkdfSha384, kem_alg),
+            KemAlg::DhP521HkdfSha512 => unimplemented!(),
         }
     }
 }
@@ -351,8 +368,7 @@ macro_rules! do_gen_keypair {
         };
         let pk = AgilePublicKey {
             kem_alg: kem_alg.clone(),
-            pubkey_bytes: Some(pk.to_bytes().to_vec()),
-            privkey_bytes: None,
+            pubkey_bytes: pk.to_bytes().to_vec(),
         };
 
         AgileKeypair(sk, pk)
@@ -363,9 +379,10 @@ pub fn agile_gen_keypair<R: CryptoRng + RngCore>(kem_alg: KemAlg, csprng: &mut R
     match kem_alg {
         KemAlg::X25519HkdfSha256 => do_gen_keypair!(X25519HkdfSha256, kem_alg, csprng),
         KemAlg::X25519Kyber768Draft00 => do_gen_keypair!(X25519Kyber768Draft00, kem_alg, csprng),
+        KemAlg::X448HkdfSha512 => unimplemented!(),
         KemAlg::DhP256HkdfSha256 => do_gen_keypair!(DhP256HkdfSha256, kem_alg, csprng),
-        // KemAlg::DhP384HkdfSha384 => do_gen_keypair!(DhP384HkdfSha384, kem_alg, csprng),
-        _ => unimplemented!(),
+        KemAlg::DhP384HkdfSha384 => do_gen_keypair!(DhP384HkdfSha384, kem_alg, csprng),
+        KemAlg::DhP521HkdfSha512 => unimplemented!(),
     }
 }
 
@@ -635,7 +652,8 @@ pub fn agile_setup_sender<R: CryptoRng + RngCore>(
     let to_match = (aead_alg, kem_alg.clone(), kdf_alg);
 
     // This gets overwritten by the below macro call. It's None iff dispatch failed.
-    let mut res: Option<Result<(AgileEncappedKey, Box<dyn AgileAeadCtxS>), AgileHpkeError>> = None;
+    type AgileHpkeRes = Result<(AgileEncappedKey, Box<dyn AgileAeadCtxS>), AgileHpkeError>;
+    let mut res: Option<AgileHpkeRes> = None;
 
     #[rustfmt::skip]
     hpke_dispatch!(
