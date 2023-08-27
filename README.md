@@ -50,8 +50,6 @@ age-plugin-hpke [OPTIONS]
 
 ### Generate recipient and identity
 
-None of the recipient or identity is secret. The identity secrecy resides in its usefulness only after a certain point in time.
-
 Create an identity using Kyber768.
 
 ```shell

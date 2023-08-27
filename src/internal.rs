@@ -13,7 +13,6 @@ use crate::agile::{
 
 pub const STANZA_TAG: &str = "hpke";
 pub const INFO_STR: &[u8] = b"age-plugin-hpke";
-pub const PLUGIN_NAME: &str = "hpke";
 
 #[derive(Debug, Encode, Decode, PartialEq, Clone)]
 pub struct Identity {
@@ -179,12 +178,16 @@ impl From<Identity> for Recipient {
 }
 
 pub struct IdentityPlugin {
+    plugin_name: String,
     identities: Vec<Identity>,
 }
 
 impl IdentityPlugin {
-    pub fn new() -> Self {
-        Self { identities: vec![] }
+    pub fn new(plugin_name: &str) -> Self {
+        Self {
+            plugin_name: plugin_name.to_owned(),
+            identities: vec![],
+        }
     }
 }
 
@@ -195,7 +198,7 @@ impl age_plugin::identity::IdentityPluginV1 for IdentityPlugin {
         plugin_name: &str,
         bytes: &[u8],
     ) -> Result<(), age_plugin::identity::Error> {
-        if plugin_name == PLUGIN_NAME {
+        if plugin_name == self.plugin_name {
             self.identities.push(Identity::from_bytes(bytes));
             Ok(())
         } else {
@@ -242,13 +245,15 @@ impl age_plugin::identity::IdentityPluginV1 for IdentityPlugin {
 }
 
 pub struct RecipientPlugin {
+    plugin_name: String,
     identities: Vec<Identity>,
     recipients: Vec<Recipient>,
 }
 
 impl RecipientPlugin {
-    pub fn new() -> Self {
+    pub fn new(plugin_name: &str) -> Self {
         Self {
+            plugin_name: plugin_name.to_owned(),
             identities: vec![],
             recipients: vec![],
         }
@@ -262,7 +267,7 @@ impl age_plugin::recipient::RecipientPluginV1 for RecipientPlugin {
         plugin_name: &str,
         bytes: &[u8],
     ) -> Result<(), age_plugin::recipient::Error> {
-        if plugin_name == PLUGIN_NAME {
+        if plugin_name == self.plugin_name {
             self.recipients.push(Recipient::from_bytes(bytes));
             Ok(())
         } else {
@@ -279,7 +284,7 @@ impl age_plugin::recipient::RecipientPluginV1 for RecipientPlugin {
         plugin_name: &str,
         bytes: &[u8],
     ) -> Result<(), age_plugin::recipient::Error> {
-        if plugin_name == PLUGIN_NAME {
+        if plugin_name == self.plugin_name {
             self.identities.push(Identity::from_bytes(bytes));
             Ok(())
         } else {

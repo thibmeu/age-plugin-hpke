@@ -15,8 +15,12 @@ mod internal;
 const PLUGIN_RECIPIENT_PREFIX: &str = "age1";
 const PLUGIN_IDENTITY_PREFIX: &str = "age-plugin-";
 
-pub fn run_state_machine(state_machine: &str) -> io::Result<()> {
-    age_plugin::run_state_machine(state_machine, RecipientPlugin::new, IdentityPlugin::new)
+pub fn run_state_machine(plugin_name: &str, state_machine: &str) -> io::Result<()> {
+    age_plugin::run_state_machine(
+        state_machine,
+        || RecipientPlugin::new(plugin_name),
+        || IdentityPlugin::new(plugin_name),
+    )
 }
 
 pub fn new_identity(kem: KemAlg, aead: AeadAlg, associated_data: &str) -> (Vec<u8>, Vec<u8>) {

@@ -14,12 +14,11 @@ pub fn generate(associated_data: &str, kem: Kem, aead: Aead) {
 }
 
 pub fn run_state_machine(state_machine: String) {
-    age_plugin_hpke::run_state_machine(&state_machine).unwrap()
+    age_plugin_hpke::run_state_machine(PLUGIN_NAME, &state_machine).unwrap()
 }
 
 fn main() {
     let cli = cli::build();
-    //   std::io::Write::write_all(&mut std::fs::File::create("log.txt").unwrap(), b"----cli built\n");
 
     if let Some(state_machine) = cli.age_plugin {
         return run_state_machine(state_machine);
