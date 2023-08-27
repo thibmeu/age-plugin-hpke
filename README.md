@@ -38,7 +38,7 @@ HPKE is defined in [RFC 9180](https://www.rfc-editor.org/rfc/rfc9180.html), and 
 |:-------------------|:--------------------------|
 | Cargo (Rust 1.67+) | `cargo install --git https://github.com/thibmeu/age-plugin-hpke` |
 
-Read [age installation instructions](https://github.com/FiloSottile/age#installation) to install age. 
+Read [age installation instructions](https://github.com/FiloSottile/age#installation) to install age.
 
 ## Usage
 
@@ -52,8 +52,9 @@ age-plugin-hpke [OPTIONS]
 
 None of the recipient or identity is secret. The identity secrecy resides in its usefulness only after a certain point in time.
 
-Create an identity for fastnet.
-```
+Create an identity using Kyber768.
+
+```shell
 age-plugin-hpke --generate --kem x25519-kyber768-draft00 --aead cha-cha20-poly1305 --associated-data "user@example.com" > my_id.key
 ```
 
@@ -88,11 +89,11 @@ This software has not been audited. Please use at your sole discretion. With thi
 
 ### Stanza
 
-`hpke <KEM> <AEAD> <AHDH>`
+`hpke <KEM> <AEAD> <ASSOCIATED_DATA>`
 
 ### Recipient
 
-`age1hpke1<KEM_ALG><AEAD_ALG><KDF_ALG><PUBLIC_KEY>`
+`age1hpke1<KEM_ALG><AEAD_ALG><KDF_ALG><PUBLIC_KEY><ASSOCIATED_DATA>`
 
 ### Identity
 
