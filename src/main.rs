@@ -7,7 +7,10 @@ pub const PLUGIN_NAME: &str = "hpke";
 
 pub fn generate(associated_data: &str, kem: Kem, aead: Aead) {
     let (identity, recipient) = new_identity(kem.to_alg(), aead.to_alg(), associated_data);
-    println!("{}", new_identity_to_string(PLUGIN_NAME, &identity, &recipient));
+    println!(
+        "{}",
+        new_identity_to_string(PLUGIN_NAME, &identity, &recipient)
+    );
 }
 
 pub fn run_state_machine(state_machine: String) {
