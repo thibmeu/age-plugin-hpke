@@ -11,6 +11,10 @@ use crate::internal::{IdentityPlugin, RecipientPlugin};
 pub mod agile;
 mod internal;
 
+// Plugin HRPs are age1[name] and AGE-PLUGIN-[NAME]-
+const PLUGIN_RECIPIENT_PREFIX: &str = "age1";
+const PLUGIN_IDENTITY_PREFIX: &str = "age-plugin-";
+
 pub fn run_state_machine(state_machine: &str) -> io::Result<()> {
     age_plugin::run_state_machine(state_machine, RecipientPlugin::new, IdentityPlugin::new)
 }
@@ -36,21 +40,37 @@ pub fn new_identity(kem: KemAlg, aead: AeadAlg, associated_data: &str) -> (Vec<u
     (identity.to_bytes(), recipient.to_bytes())
 }
 
-pub fn print_new_identity(plugin_name: &str, identity: &[u8], recipient: &[u8]) {
-    age_plugin::print_new_identity(plugin_name, identity, recipient)
+pub fn new_identity_to_string(plugin_name: &str, identity: &[u8], recipient: &[u8]) -> String {
+    format!(
+        "# created: {}
+# recipient: {}
+{}",
+        chrono::Local::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+        recipient_to_string(plugin_name, recipient),
+        identity_to_string(plugin_name, identity),
+    )
 }
 
-pub fn print_recipient(plugin_name: &str, identity: &[u8]) {
-    const PLUGIN_RECIPIENT_PREFIX: &str = "age1";
+pub fn identity_to_string(plugin_name: &str, identity: &[u8]) -> String {
+    bech32::encode(
+        &format!("{}{}-", PLUGIN_IDENTITY_PREFIX, plugin_name),
+        identity.to_base32(),
+        Variant::Bech32,
+    )
+    .expect("HRP is valid")
+    .to_uppercase()
+}
+
+pub fn recipient_to_string(plugin_name: &str, recipient: &[u8]) -> String {
+    bech32::encode(
+        &format!("{}{}", PLUGIN_RECIPIENT_PREFIX, plugin_name),
+        recipient.to_base32(),
+        Variant::Bech32,
+    )
+    .expect("HRP is valid")
+}
+
+pub fn convert_identity_to_recipient(identity: &[u8]) -> Vec<u8> {
     let recipient: Recipient = Identity::from_bytes(identity).into();
-    let recipient = recipient.to_bytes();
-    println!(
-        "{}",
-        bech32::encode(
-            &format!("{}{}", PLUGIN_RECIPIENT_PREFIX, plugin_name),
-            recipient.to_base32(),
-            Variant::Bech32
-        )
-        .expect("HRP is valid")
-    );
+    recipient.to_bytes()
 }

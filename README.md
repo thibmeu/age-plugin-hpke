@@ -7,7 +7,7 @@
 [Crates.io]: https://crates.io/crates/age-plugin-hpke
 [Documentation]: https://docs.rs/age-plugin-hpke/
 
-age-plugin-tlock is a plugin for [age](https://github.com/C2SP/C2SP/blob/main/age.md). It provides an age Identity and Recipient consuming Hybrid Public Key Encrypted (HPKE) files.
+age-plugin-hpke is a plugin for [age](https://github.com/C2SP/C2SP/blob/main/age.md). It provides an age Identity and Recipient consuming Hybrid Public Key Encrypted (HPKE) files.
 
 HPKE is defined in [RFC 9180](https://www.rfc-editor.org/rfc/rfc9180.html), and age-plugin are defined by [C2SP](https://github.com/C2SP/C2SP/blob/main/age.md).
 

@@ -1,4 +1,4 @@
-use age_plugin_hpke::{new_identity, print_new_identity};
+use age_plugin_hpke::{new_identity, new_identity_to_string};
 use cli::{Aead, Kem};
 
 mod cli;
@@ -7,7 +7,7 @@ pub const PLUGIN_NAME: &str = "hpke";
 
 pub fn generate(associated_data: &str, kem: Kem, aead: Aead) {
     let (identity, recipient) = new_identity(kem.to_alg(), aead.to_alg(), associated_data);
-    print_new_identity(PLUGIN_NAME, &identity, &recipient)
+    println!("{}", new_identity_to_string(PLUGIN_NAME, &identity, &recipient));
 }
 
 pub fn run_state_machine(state_machine: String) {
