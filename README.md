@@ -58,7 +58,8 @@ age-plugin-hpke --generate --kem x25519-kyber768-draft00 --aead cha-cha20-poly13
 ```
 
 For convenience, you can also create an associated recipient
-```
+
+```shell
 cat my_id.key | grep 'recipient' | sed 's/.*\(age1.*\)/\1/' > my_id.key.pub
 ```
 
@@ -68,7 +69,7 @@ cat my_id.key | grep 'recipient' | sed 's/.*\(age1.*\)/\1/' > my_id.key.pub
 
 Encrypt `Hello age-plugin-hpke!` string with your new key.
 
-```
+```shell
 echo "Hello age-plugin-hpke!" | age -a -R my_id.key.pub > data.age
 age --decrypt -i my_id.key data.age
 Hello age-plugin-hpke!
@@ -77,6 +78,7 @@ Hello age-plugin-hpke!
 ## Security Considerations
 
 This software has not been audited. Please use at your sole discretion. With this in mind, dee security relies on the following:
+
 * [HPKE RFC 9180](https://www.rfc-editor.org/rfc/rfc9180.html) by R. Barnes, K. Bhargavan, B. Lipp, C. Wood, and its implementation in [rozbb/rust-hpke](https://github.com/rozbb/rust-hpke),
 * [age](https://github.com/C2SP/C2SP/blob/main/age.md) encryption protocol, and its implementation in [str4d/rage](https://github.com/str4d/rage),
 
@@ -101,6 +103,14 @@ This software has not been audited. Please use at your sole discretion. With thi
 Why not? At the time of writting, age is available on multiple platform, has a file format allowing for agility, and a decent tooling to integrate with.
 
 IETF format with [HPKE in COSE](https://datatracker.ietf.org/doc/draft-ietf-cose-hpke/) might offer an alternative path down the line.
+
+### Usage as a library
+
+The underlying primitive used in the cli are exposed via a library. This includes the age stanza, recipient, and identity, as well as tools to generate an identity from scratch.
+
+```shell
+cargo add age-plugin-hpke
+```
 
 ## License
 

@@ -100,77 +100,11 @@ pub enum AeadAlg {
     ChaCha20Poly1305,
 }
 
-impl AeadAlg {
-    fn name(&self) -> &'static str {
-        match self {
-            AeadAlg::AesGcm128 => "AesGcm128",
-            AeadAlg::AesGcm256 => "AesGcm256",
-            AeadAlg::ChaCha20Poly1305 => "ChaCha20Poly1305",
-        }
-    }
-
-    fn try_from_u16(id: u16) -> Result<AeadAlg, AgileHpkeError> {
-        let res = match id {
-            0x01 => AeadAlg::AesGcm128,
-            0x02 => AeadAlg::AesGcm256,
-            0x03 => AeadAlg::ChaCha20Poly1305,
-            _ => return Err(AgileHpkeError::UnknownAlgIdent("AeadAlg", id)),
-        };
-
-        Ok(res)
-    }
-
-    fn to_u16(&self) -> u16 {
-        match self {
-            AeadAlg::AesGcm128 => 0x01,
-            AeadAlg::AesGcm256 => 0x02,
-            AeadAlg::ChaCha20Poly1305 => 0x03,
-        }
-    }
-}
-
 #[derive(Debug, Encode, Decode, PartialEq, Clone)]
 pub enum KdfAlg {
     HkdfSha256,
     HkdfSha384,
     HkdfSha512,
-}
-
-impl KdfAlg {
-    fn name(&self) -> &'static str {
-        match self {
-            KdfAlg::HkdfSha256 => "HkdfSha256",
-            KdfAlg::HkdfSha384 => "HkdfSha384",
-            KdfAlg::HkdfSha512 => "HkdfSha512",
-        }
-    }
-
-    fn try_from_u16(id: u16) -> Result<KdfAlg, AgileHpkeError> {
-        let res = match id {
-            0x01 => KdfAlg::HkdfSha256,
-            0x02 => KdfAlg::HkdfSha384,
-            0x03 => KdfAlg::HkdfSha512,
-            _ => return Err(AgileHpkeError::UnknownAlgIdent("KdfAlg", id)),
-        };
-
-        Ok(res)
-    }
-
-    fn to_u16(&self) -> u16 {
-        match self {
-            KdfAlg::HkdfSha256 => 0x01,
-            KdfAlg::HkdfSha384 => 0x02,
-            KdfAlg::HkdfSha512 => 0x03,
-        }
-    }
-
-    fn get_digest_len(&self) -> usize {
-        match self {
-            KdfAlg::HkdfSha256 => 32,
-            KdfAlg::HkdfSha384 => 48,
-            KdfAlg::HkdfSha512 => 64,
-        }
-    }
 }
 
 #[derive(Debug, Encode, Decode, PartialEq, Clone)]
