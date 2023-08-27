@@ -21,5 +21,5 @@ chrono = "0.4.26"
 clap = "4.3.21"
 clap-verbosity-flag = "2.0.1"
 hex = "0.4.3"
-hpke = { git = "https://github.com/rozbb/rust-hpke.git", branch = "unstable-pq-xyber", features = ["p384", "xyber768d00"] }
+hpke = { version = "0.10.0", git = "https://github.com/rozbb/rust-hpke.git", branch = "unstable-pq-xyber", features = ["p384", "xyber768d00"] }
 rand = "0.8.5"
