@@ -334,13 +334,13 @@ impl<'a> AgileOpModeR<'a> {
         }
     }
 
-    fn try_lift<Kem: KemTrait, Kdf: KdfTrait>(self) -> Result<OpModeR<'a, Kem>, AgileHpkeError> {
+    fn try_lift<Kem: KemTrait>(self) -> Result<OpModeR<'a, Kem>, AgileHpkeError> {
         let res = match self.op_mode_ty {
             AgileOpModeRTy::Base => OpModeR::Base,
-            AgileOpModeRTy::Psk(bundle) => OpModeR::Psk(bundle.try_lift::<Kdf>()?),
+            AgileOpModeRTy::Psk(bundle) => OpModeR::Psk(bundle.try_lift()?),
             AgileOpModeRTy::Auth(pk) => OpModeR::Auth(pk.try_lift::<Kem>()?),
             AgileOpModeRTy::AuthPsk(pk, bundle) => {
-                OpModeR::AuthPsk(pk.try_lift::<Kem>()?, bundle.try_lift::<Kdf>()?)
+                OpModeR::AuthPsk(pk.try_lift::<Kem>()?, bundle.try_lift()?)
             }
         };
 
@@ -400,13 +400,13 @@ impl<'a> AgileOpModeS<'a> {
         }
     }
 
-    fn try_lift<Kem: KemTrait, Kdf: KdfTrait>(self) -> Result<OpModeS<'a, Kem>, AgileHpkeError> {
+    fn try_lift<Kem: KemTrait>(self) -> Result<OpModeS<'a, Kem>, AgileHpkeError> {
         let res = match self.op_mode_ty {
             AgileOpModeSTy::Base => OpModeS::Base,
-            AgileOpModeSTy::Psk(bundle) => OpModeS::Psk(bundle.try_lift::<Kdf>()?),
+            AgileOpModeSTy::Psk(bundle) => OpModeS::Psk(bundle.try_lift()?),
             AgileOpModeSTy::Auth(keypair) => OpModeS::Auth(keypair.try_lift::<Kem>()?),
             AgileOpModeSTy::AuthPsk(keypair, bundle) => {
-                OpModeS::AuthPsk(keypair.try_lift::<Kem>()?, bundle.try_lift::<Kdf>()?)
+                OpModeS::AuthPsk(keypair.try_lift::<Kem>()?, bundle.try_lift()?)
             }
         };
 
@@ -458,7 +458,7 @@ pub enum AgileOpModeSTy<'a> {
 pub struct AgilePskBundle<'a>(PskBundle<'a>);
 
 impl<'a> AgilePskBundle<'a> {
-    fn try_lift<Kdf: KdfTrait>(self) -> Result<PskBundle<'a>, AgileHpkeError> {
+    fn try_lift(self) -> Result<PskBundle<'a>, AgileHpkeError> {
         Ok(self.0)
     }
 }
@@ -546,7 +546,7 @@ where
     R: CryptoRng + RngCore,
 {
     let kem_alg = mode.kem_alg.clone();
-    let mode = mode.clone().try_lift::<Kem, Kdf>()?;
+    let mode = mode.clone().try_lift::<Kem>()?;
     let pk_recip = pk_recip.try_lift::<Kem>()?;
 
     let (encapped_key, aead_ctx) = setup_sender::<A, Kdf, Kem, _>(&mode, &pk_recip, info, csprng)?;
@@ -623,7 +623,7 @@ where
     Kdf: 'static + KdfTrait,
     Kem: 'static + KemTrait,
 {
-    let mode = mode.clone().try_lift::<Kem, Kdf>()?;
+    let mode = mode.clone().try_lift::<Kem>()?;
     let (sk_recip, _) = recip_keypair.try_lift::<Kem>()?;
     let encapped_key = encapped_key.try_lift::<Kem>()?;
 

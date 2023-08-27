@@ -97,7 +97,7 @@ This software has not been audited. Please use at your sole discretion. With thi
 
 ### Identity
 
-`AGE-PLUGIN-HPKE-<KEM_ALG><AEAD_ALG><KDF_ALG><PRIVATE_KEY>`
+`AGE-PLUGIN-HPKE-<KEM_ALG><AEAD_ALG><KDF_ALG><PRIVATE_KEY><ASSOCIATED_DATA>`
 
 ### Why age for HPKE
 

@@ -102,6 +102,7 @@ dependencies = [
  "age",
  "age-core",
  "age-plugin",
+ "bech32",
  "bincode",
  "clap",
  "clap-verbosity-flag",

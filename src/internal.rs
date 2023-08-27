@@ -21,15 +21,23 @@ pub struct Identity {
     aead: AeadAlg,
     kdf: KdfAlg,
     private_key: AgilePrivateKey,
+    associated_data: Vec<u8>,
 }
 
 impl Identity {
-    pub fn new(kem: KemAlg, aead: AeadAlg, kdf: KdfAlg, private_key: &AgilePrivateKey) -> Self {
+    pub fn new(
+        kem: KemAlg,
+        aead: AeadAlg,
+        kdf: KdfAlg,
+        private_key: &AgilePrivateKey,
+        associated_data: &[u8],
+    ) -> Self {
         Self {
             kem,
             aead,
             kdf,
             private_key: private_key.clone(),
+            associated_data: associated_data.to_vec(),
         }
     }
 
@@ -155,6 +163,18 @@ impl age::Recipient for Recipient {
             ],
             body: ciphertext,
         }])
+    }
+}
+
+impl From<Identity> for Recipient {
+    fn from(identity: Identity) -> Self {
+        Self {
+            kem: identity.kem,
+            aead: identity.aead,
+            kdf: identity.kdf,
+            public_key: identity.private_key.to_pk(),
+            associated_data: identity.associated_data,
+        }
     }
 }
 
