@@ -69,7 +69,7 @@ cat my_id.key | grep 'recipient' | sed 's/.*\(age1.*\)/\1/' > my_id.key.pub
 Encrypt `Hello age-plugin-hpke!` string with your new key.
 
 ```shell
-echo "Hello age-plugin-hpke!" | age -a -R my_id.key.pub > data.age
+echo 'Hello age-plugin-hpke!' | age -a -R my_id.key.pub > data.age
 age --decrypt -i my_id.key data.age
 Hello age-plugin-hpke!
 ```
