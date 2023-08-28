@@ -48,7 +48,8 @@ pub fn new_identity_to_string(plugin_name: &str, identity: &[u8], recipient: &[u
     format!(
         "# created: {}
 # recipient: {}
-{}",
+{}
+",
         chrono::Local::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
         recipient_to_string(plugin_name, recipient),
         identity_to_string(plugin_name, identity),

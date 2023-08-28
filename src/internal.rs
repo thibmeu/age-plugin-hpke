@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use age_core::{format::Stanza, secrecy::ExposeSecret};
 use age_plugin::{identity, recipient};
+use base64::{engine::general_purpose::STANDARD_NO_PAD as BASE64, Engine};
 use bincode::{config, Decode, Encode};
 use rand::{rngs::StdRng, SeedableRng};
 
@@ -63,9 +64,9 @@ impl age::Identity for Identity {
             return Some(Err(age::DecryptError::InvalidHeader));
         }
         let args: [Vec<u8>; 3] = [
-            hex::decode(stanza.args[0].clone()).ok()?,
-            hex::decode(stanza.args[1].clone()).ok()?,
-            hex::decode(stanza.args[2].clone()).ok()?,
+            BASE64.decode(stanza.args[0].clone()).ok()?,
+            BASE64.decode(stanza.args[1].clone()).ok()?,
+            BASE64.decode(stanza.args[2].clone()).ok()?,
         ];
         let [associated_data, encapped_key_bytes, tag_bytes] = args;
 
@@ -156,9 +157,9 @@ impl age::Recipient for Recipient {
         Ok(vec![Stanza {
             tag: STANZA_TAG.to_string(),
             args: vec![
-                hex::encode(&self.associated_data),
-                hex::encode(encapped_key.to_bytes()),
-                hex::encode(tag),
+                BASE64.encode(&self.associated_data),
+                BASE64.encode(encapped_key.to_bytes()),
+                BASE64.encode(tag),
             ],
             body: ciphertext,
         }])

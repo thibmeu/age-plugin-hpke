@@ -87,7 +87,9 @@ This software has not been audited. Please use at your sole discretion. With thi
 
 ### Stanza
 
-`hpke <KEM> <AEAD> <ASSOCIATED_DATA>`
+`hpke <ASSOCIATED_DATA> <KEM> <AEAD>`
+
+All data within the stanza are base64 encoded with no pad.
 
 ### Recipient
 
