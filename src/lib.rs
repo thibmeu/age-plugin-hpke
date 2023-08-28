@@ -69,14 +69,14 @@ pub fn identity_to_string(plugin_name: &str, identity: &[u8]) -> String {
 pub fn identity_from_string(identity: &str) -> Vec<u8> {
     use bech32::FromBase32;
 
-    let mut identity = identity.trim_start();
+    let mut identity = identity.trim();
     while identity.starts_with('#') {
         identity = identity
             .find('\n')
             .map(|i| identity.split_at(i + 1))
             .map(|(_, rest)| rest)
             .unwrap_or("")
-            .trim_start();
+            .trim();
     }
     let (_, identity_decoded, _) = bech32::decode(identity).unwrap();
     Vec::from_base32(&identity_decoded).unwrap()
