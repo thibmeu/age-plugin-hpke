@@ -76,7 +76,7 @@ Hello age-plugin-hpke!
 
 ## Security Considerations
 
-This software has not been audited. Please use at your sole discretion. With this in mind, dee security relies on the following:
+This software has not been audited. Please use at your sole discretion. With this in mind, age-plugin-hpke security relies on the following:
 
 * [HPKE RFC 9180](https://www.rfc-editor.org/rfc/rfc9180.html) by R. Barnes, K. Bhargavan, B. Lipp, C. Wood, and its implementation in [rozbb/rust-hpke](https://github.com/rozbb/rust-hpke),
 * [age](https://github.com/C2SP/C2SP/blob/main/age.md) encryption protocol, and its implementation in [str4d/rage](https://github.com/str4d/rage),

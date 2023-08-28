@@ -7,7 +7,7 @@
 //! Can I do better? yes. Is this for now? Likely not.
 
 use bincode::{Decode, Encode};
-use hpke::{
+use hpke_pq::{
     aead::{Aead, AeadCtxR, AeadCtxS, AeadTag, AesGcm128, AesGcm256, ChaCha20Poly1305},
     kdf::{HkdfSha256, HkdfSha384, HkdfSha512, Kdf as KdfTrait},
     kem::{
